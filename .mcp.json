@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "prosemap": {
+      "type": "http",
+      "url": "https://www.prosemap.io/api/mcp"
+    }
+  }
+}

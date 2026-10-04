@@ -1,0 +1,20 @@
+{
+  "name": "prosemap",
+  "description": "Find the weak sentences in a draft and why they are weak. You stay the writer; AI helps fix them.",
+  "version": "1.1.1",
+  "author": {
+    "name": "ProseMap",
+    "email": "support@prosemap.io",
+    "url": "https://www.prosemap.io"
+  },
+  "homepage": "https://www.prosemap.io/connect",
+  "keywords": [
+    "writing",
+    "editing",
+    "prose",
+    "feedback",
+    "revision"
+  ],
+  "repository": "https://github.com/puj/Prosemap-Plugin",
+  "license": "MIT"
+}

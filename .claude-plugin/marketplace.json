@@ -1,0 +1,17 @@
+{
+  "name": "prosemap",
+  "owner": {
+    "name": "ProseMap",
+    "email": "support@prosemap.io"
+  },
+  "metadata": {
+    "description": "The ProseMap plugin for Claude."
+  },
+  "plugins": [
+    {
+      "name": "prosemap",
+      "source": "./",
+      "description": "Find the weak sentences in a draft and why they are weak. You stay the writer; AI helps fix them."
+    }
+  ]
+}

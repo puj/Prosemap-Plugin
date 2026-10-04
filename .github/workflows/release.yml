@@ -1,0 +1,63 @@
+# Checks the plugin files on every push, and on a version tag builds the zip and attaches it to a release.
+name: Build plugin
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the files
+        run: |
+          set -euo pipefail
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .mcp.json; do
+            jq -e . "$f" > /dev/null
+          done
+          test "$(jq -r .name .claude-plugin/plugin.json)" = "prosemap"
+          test "$(jq -r '.mcpServers.prosemap.url' .mcp.json)" = "https://www.prosemap.io/api/mcp"
+          # Nothing that looks like a credential may ever be committed here.
+          if grep -rInE 'pm_[A-Za-z0-9_-]{30,}|pmr_[A-Za-z0-9_-]{30,}|sk_(live|test)_|Bearer [A-Za-z0-9_-]{20,}|BEGIN [A-Z ]*PRIVATE KEY' --exclude-dir=.git --exclude=release.yml .; then
+            echo "A credential-like string was found." >&2
+            exit 1
+          fi
+
+      - name: Build the zip
+        run: |
+          set -euo pipefail
+          version="$(jq -r .version .claude-plugin/plugin.json)"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          mkdir -p build/prosemap/.claude-plugin
+          cp .claude-plugin/plugin.json build/prosemap/.claude-plugin/
+          cp .mcp.json README.md LICENSE build/prosemap/
+          (cd build && zip -r -X "../prosemap-claude-plugin-$version.zip" prosemap)
+          unzip -l "prosemap-claude-plugin-$version.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prosemap-claude-plugin
+          path: prosemap-claude-plugin-*.zip
+
+      - name: Attach to a release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          if [ "$tag" != "v$VERSION" ]; then
+            echo "Tag $tag does not match the plugin version $VERSION." >&2
+            exit 1
+          fi
+          gh release create "$tag" "prosemap-claude-plugin-$VERSION.zip" --title "ProseMap for Claude $VERSION" --notes "ProseMap plugin for Claude, version $VERSION. Install with: /plugin marketplace add puj/Prosemap-Plugin" \
+            || gh release upload "$tag" "prosemap-claude-plugin-$VERSION.zip" --clobber
